@@ -44,7 +44,7 @@ if ADULT_DOMAINS_FILE.exists():
 # Adult TLDs and Strong Keywords
 ADULT_TLDS = [".xxx", ".porn", ".sex", ".adult", ".sexy", ".cam", ".tube", ".erotica"]
 STRONG_KEYWORDS = [
-    "pornhub", "xvideos", "xnxx", "xhamster", "redtube", "youporn", "tube8",
+    "pornhub", "xvideos", "xnxx", "xhamster", "xham", "redtube", "youporn", "tube8",
     "spankbang", "brazzers", "bangbros", "realitykings", "chaturbate", "livejasmin",
     "stripchat", "onlyfans", "fansly", "manyvids", "rule34", "e-hentai", "nhentai",
     "porntrex", "tnaflix", "drtuber", "beeg", "txxx", "eporner", "heavy-r",
@@ -172,3 +172,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

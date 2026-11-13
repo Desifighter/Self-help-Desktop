@@ -14,7 +14,7 @@ impl HeuristicDomainClassifier {
                 ".xxx", ".porn", ".sex", ".adult", ".sexy", ".cam", ".tube", ".erotica"
             ],
             strong_keywords: vec![
-                "porn", "pornhub", "xxx", "xvideo", "xvideos", "xnxx", "xhamster", "redtube",
+                "porn", "pornhub", "xxx", "xvideo", "xvideos", "xnxx", "xhamster", "xham", "redtube",
                 "youporn", "hentai", "milf", "brazzers", "bangbros", "chaturbate", "livejasmin",
                 "stripchat", "camgirl", "onlyfans", "fansly", "manyvids", "pornstar", "spankbang",
                 "tube8", "porntube", "sextube", "eporner", "beeg", "hqporner", "tnaflix", "thumbzilla",
