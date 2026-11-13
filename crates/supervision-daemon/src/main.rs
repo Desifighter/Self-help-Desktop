@@ -119,21 +119,26 @@ async fn run_daemon() -> Result<(), Box<dyn std::error::Error>> {
     {
         let config_clone = Arc::clone(&config);
         let events_clone = Arc::clone(&recent_events);
+        let heuristics = supervision_core::classification::HeuristicDomainClassifier::new();
         tokio::spawn(async move {
             loop {
                 sleep(Duration::from_millis(500)).await;
 
                 if let Some(win) = WindowMonitor::get_foreground_window() {
-                    let is_restricted = config_clone.read().is_restricted_process(&win.process_name);
+                    let is_restricted_app = config_clone.read().is_restricted_process(&win.process_name);
+                    let is_adult_content = heuristics.classify_window_title(&win.window_title, &win.process_name);
 
-                    if is_restricted {
-                        info!("Restricted window detected: {} [{}] PID {}", win.process_name, win.window_title, win.process_id);
+                    if is_restricted_app || is_adult_content {
+                        let category = if is_adult_content { "ADULT_CONTENT" } else { "APPLICATION" };
+                        let action = if is_adult_content { "ACTIVE_WINDOW_EVICTED" } else { "EVICTED_AND_TERMINATED" };
+
+                        info!("Intervention triggered: {} [{}] ({}) PID {}", win.process_name, win.window_title, category, win.process_id);
 
                         let event = BlockEvent {
                             timestamp: chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
-                            target: win.process_name.clone(),
-                            category: "APPLICATION".to_string(),
-                            action: "EVICTED_AND_TERMINATED".to_string(),
+                            target: if is_adult_content { win.window_title.clone() } else { win.process_name.clone() },
+                            category: category.to_string(),
+                            action: action.to_string(),
                         };
                         {
                             let mut evs = events_clone.write();
@@ -143,7 +148,7 @@ async fn run_daemon() -> Result<(), Box<dyn std::error::Error>> {
                             }
                         }
 
-                        // Evict process
+                        // Evict / minimize process
                         ProcessEviction::evict(win.process_id, &win.process_name);
                     }
                 }
@@ -386,3 +391,4 @@ fn run_windows_service() -> Result<(), Box<dyn std::error::Error>> {
     service_dispatcher::start("SupervisionService", service_main)?;
     Ok(())
 }
+

@@ -115,4 +115,51 @@ impl HeuristicDomainClassifier {
 
         None
     }
+
+    /// Automatically inspects active browser window titles for explicit adult content
+    pub fn classify_window_title(&self, title: &str, process_name: &str) -> bool {
+        let p_lower = process_name.to_lowercase();
+        // Only inspect known browser processes or electron wrappers
+        let is_browser = p_lower.contains("chrome")
+            || p_lower.contains("edge")
+            || p_lower.contains("firefox")
+            || p_lower.contains("brave")
+            || p_lower.contains("opera")
+            || p_lower.contains("safari")
+            || p_lower.contains("browser");
+
+        if !is_browser {
+            return false;
+        }
+
+        let t_lower = title.to_lowercase();
+
+        // Safe overrides for developer & work research
+        let safe_titles = [
+            "visual studio", "github", "gitlab", "stackoverflow",
+            "reddit.com/r/rust", "crates.io", "docs.rs", "google search",
+            "microsoft teams", "outlook", "slack", "zoom"
+        ];
+        for safe in &safe_titles {
+            if t_lower.contains(safe) {
+                return false;
+            }
+        }
+
+        // Check for strong adult site names & explicit indicators in window title
+        for kw in &self.strong_keywords {
+            if t_lower.contains(kw) {
+                return true;
+            }
+        }
+
+        for tld in &self.adult_tlds {
+            if t_lower.contains(tld) {
+                return true;
+            }
+        }
+
+        false
+    }
 }
+
