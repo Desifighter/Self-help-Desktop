@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Supervision Desktop - Live Foreground Window Guardian
+Supervision Desktop - Live Foreground Window & Process Guardian
 Monitors active browser windows every 100ms.
-When an adult website or prohibited domain is focused in Chrome, Edge, Brave, or Firefox:
-1. Immediately minimizes the window (SW_MINIMIZE)
-2. Posts WM_CLOSE to terminate the prohibited tab/window
-3. Pops up the fullscreen restriction warning overlay
+Features:
+1. Adult Website Interception: Minimizes & closes tabs viewing adult content.
+2. Anti-Tor Neutralizer: Detects and kills any Brave/standalone Tor process (tor*.exe).
+3. Tor Window Blocker: Minimizes and closes any Brave "Private Window with Tor".
 """
 
 import sys
@@ -14,7 +14,6 @@ import time
 import ctypes
 from ctypes import wintypes
 from pathlib import Path
-import subprocess
 
 user32 = ctypes.windll.user32
 kernel32 = ctypes.windll.kernel32
@@ -63,10 +62,51 @@ SAFE_OVERRIDES = [
     "wikipedia", "python", "rust", "code", "terminal"
 ]
 
+def kill_tor_processes():
+    """Scans and terminates any Tor client processes (e.g. Brave Tor tor-*.exe)"""
+    PROCESS_TERMINATE = 0x0001
+    SNAPSHOT_PROCESS = 0x00000002
+
+    class PROCESSENTRY32(ctypes.Structure):
+        _fields_ = [
+            ('dwSize', wintypes.DWORD),
+            ('cntUsage', wintypes.DWORD),
+            ('th32ProcessID', wintypes.DWORD),
+            ('th32DefaultHeapID', ctypes.c_size_t),
+            ('th32ModuleID', wintypes.DWORD),
+            ('cntThreads', wintypes.DWORD),
+            ('th32ParentProcessID', wintypes.DWORD),
+            ('pcPriClassBase', ctypes.c_long),
+            ('dwFlags', wintypes.DWORD),
+            ('szExeFile', ctypes.c_char * 260)
+        ]
+
+    h_snap = kernel32.CreateToolhelp32Snapshot(SNAPSHOT_PROCESS, 0)
+    if h_snap != -1:
+        pe = PROCESSENTRY32()
+        pe.dwSize = ctypes.sizeof(PROCESSENTRY32)
+        if kernel32.Process32First(h_snap, ctypes.byref(pe)):
+            while True:
+                exe_name = pe.szExeFile.decode('latin1', errors='ignore').lower()
+                if exe_name.startswith("tor-") or exe_name == "tor.exe" or "tor-browser" in exe_name:
+                    h_proc = kernel32.OpenProcess(PROCESS_TERMINATE, False, pe.th32ProcessID)
+                    if h_proc:
+                        kernel32.TerminateProcess(h_proc, 1)
+                        kernel32.CloseHandle(h_proc)
+                        with open(LOG_FILE, "a", encoding="utf-8") as f:
+                            f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] TERMINATED TOR PROCESS: {exe_name} (PID: {pe.th32ProcessID})\n")
+                if not kernel32.Process32Next(h_snap, ctypes.byref(pe)):
+                    break
+        kernel32.CloseHandle(h_snap)
+
 def is_adult_title(title: str) -> tuple[bool, str]:
     t = title.lower()
     if not t or len(t) < 3:
         return False, ""
+
+    # Anti-Tor Check: Block Brave Private Window with Tor
+    if "private window with tor" in t or "(tor)" in t:
+        return True, "Brave Tor Window (Bypass Attempt Blocked)"
 
     # Never interfere with safe work/dev software
     for safe in SAFE_OVERRIDES:
@@ -101,32 +141,34 @@ def get_process_name(pid: int) -> str:
     return ""
 
 def trigger_close_tab(hwnd):
-    # Try sending Ctrl+W directly to close the active tab
+    # Send Ctrl+W directly to close the active tab
     user32.keybd_event(VK_CONTROL, 0, 0, 0)
     user32.keybd_event(ord('W'), 0, 0, 0)
     user32.keybd_event(ord('W'), 0, KEYEVENTF_KEYUP, 0)
     user32.keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0)
 
-def show_alert_popup(title: str, reason: str):
-    msg = f"ACCESS RESTRICTED\n\nSupervision detected adult content:\n{reason}\n\nWindow has been minimized and closed."
-    # Use MessageBox non-blocking or simple print
-    ctypes.windll.user32.MessageBoxW(0, msg, "Supervision Self-Control Alert", 0x00000030 | 0x00040000)
-
 def main():
     print("=" * 60)
     print("   Supervision Desktop — Real-Time Active Guardian Running   ")
     print("=" * 60)
-    print("Monitoring foreground browser windows every 100ms...")
-    print("Zero-interference enabled for IDEs, developer tools, and work apps.\n")
+    print("Active protections:")
+    print("  • Adult domain & keyword interception")
+    print("  • Anti-Tor process killer (tor*.exe)")
+    print("  • Brave Tor window closer")
+    print("Monitoring every 100ms...\n")
 
     with open(LOG_FILE, "a", encoding="utf-8") as f:
-        f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Guardian started\n")
+        f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Guardian started with Anti-Tor protection\n")
 
     last_evicted_time = 0
     last_evicted_title = ""
 
     while True:
         try:
+            # 1. Kill any active Tor background processes
+            kill_tor_processes()
+
+            # 2. Check active foreground window
             hwnd = user32.GetForegroundWindow()
             if hwnd:
                 length = user32.GetWindowTextLengthW(hwnd)
@@ -145,8 +187,7 @@ def main():
                         is_adult, reason = is_adult_title(title)
                         if is_adult:
                             now = time.time()
-                            # Debounce rapid triggers on same window
-                            if title != last_evicted_title or (now - last_evicted_time) > 2.0:
+                            if title != last_evicted_title or (now - last_evicted_time) > 1.5:
                                 last_evicted_title = title
                                 last_evicted_time = now
 
@@ -161,15 +202,14 @@ def main():
                                 # Stage 2: Send Ctrl+W to close prohibited tab
                                 trigger_close_tab(hwnd)
 
-                                # Stage 3: Send WM_CLOSE if still open
-                                time.sleep(0.1)
+                                # Stage 3: Send WM_CLOSE if whole window is Tor
+                                time.sleep(0.05)
                                 user32.PostMessageW(hwnd, WM_CLOSE, 0, 0)
 
-        except Exception as e:
+        except Exception:
             pass
 
         time.sleep(0.1)
 
 if __name__ == "__main__":
     main()
-

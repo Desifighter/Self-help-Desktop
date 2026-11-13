@@ -71,12 +71,13 @@ try {
     Write-Host "  [-] Could not set adapter DNS: $_" -ForegroundColor Yellow
 }
 
-# 3. Disable Browser DoH (Encrypted DNS) in Chrome, Edge, and Brave
-Write-Host '[3/5] Disabling browser DoH bypass in Chrome, Edge, and Brave...' -ForegroundColor Yellow
+# 3. Disable Browser DoH (Encrypted DNS) and Tor Mode in Brave
+Write-Host '[3/5] Disabling browser DoH bypass and Brave Tor mode...' -ForegroundColor Yellow
 $regPaths = @(
     'HKLM:\SOFTWARE\Policies\Google\Chrome',
     'HKLM:\SOFTWARE\Policies\Microsoft\Edge',
-    'HKLM:\SOFTWARE\Policies\BraveSoftware\Brave'
+    'HKLM:\SOFTWARE\Policies\BraveSoftware\Brave',
+    'HKCU:\SOFTWARE\Policies\BraveSoftware\Brave'
 )
 
 foreach ($path in $regPaths) {
@@ -85,8 +86,14 @@ foreach ($path in $regPaths) {
     }
     Set-ItemProperty -Path $path -Name 'DnsOverHttpsMode' -Value 'off' -Type String -Force
     Set-ItemProperty -Path $path -Name 'BuiltInDnsClientEnabled' -Value 0 -Type DWord -Force
+    if ($path -like '*Brave*') {
+        Set-ItemProperty -Path $path -Name 'TorDisabled' -Value 1 -Type DWord -Force
+    }
 }
-Write-Host '  [+] Browser DoH policies locked to OFF.' -ForegroundColor Green
+Write-Host '  [+] Browser DoH and Brave Tor mode policies locked to DISABLED.' -ForegroundColor Green
+
+# Kill any existing Tor processes
+Get-Process *tor* -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -like 'tor*' } | Stop-Process -Force -ErrorAction SilentlyContinue
 
 # 4. Flush DNS and NetBIOS Caches
 Write-Host '[4/5] Flushing Windows DNS and socket caches...' -ForegroundColor Yellow
