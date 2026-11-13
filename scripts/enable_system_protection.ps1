@@ -25,8 +25,14 @@ if (Test-Path $AdultListPath) {
         $_.Trim().ToLower() -replace '^www\.', '' -replace '^0\.0\.0\.0\s+', '' -replace '^127\.0\.0\.1\s+', ''
     } | Where-Object { $_.Contains('.') } | Select-Object -Unique
 
-    $existing = Get-Content $HostsPath -Raw -ErrorAction SilentlyContinue
-    if (-not $existing) { $existing = '' }
+    $existing = ''
+    if (Test-Path $HostsPath) {
+        try {
+            $existing = [System.IO.File]::ReadAllText($HostsPath)
+        } catch {
+            $existing = ''
+        }
+    }
 
     # Strip old section if present
     $cleaned = $existing -replace '(?s)# --- BEGIN SUPERVISION DESKTOP MANAGED BLOCKLIST ---.*?# --- END SUPERVISION DESKTOP MANAGED BLOCKLIST ---\r?\n?', ''
@@ -42,7 +48,10 @@ if (Test-Path $AdultListPath) {
     [void]$sb.AppendLine('# --- END SUPERVISION DESKTOP MANAGED BLOCKLIST ---')
 
     $final = $cleaned.TrimEnd() + "`r`n" + $sb.ToString()
-    Set-Content -Path $HostsPath -Value $final -Encoding UTF8 -Force
+
+    # Clear readonly attribute and write using robust .NET I/O (bypasses PowerShell Set-Content stream lock)
+    & attrib.exe -r -h -s "$HostsPath" 2>$null
+    [System.IO.File]::WriteAllText($HostsPath, $final, [System.Text.Encoding]::ASCII)
     Write-Host "  [+] Hosts file successfully updated with $($domains.Count) adult domains." -ForegroundColor Green
 } else {
     Write-Host "  [-] Adult list file not found at $AdultListPath" -ForegroundColor Red
