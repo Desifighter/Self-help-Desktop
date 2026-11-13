@@ -14,19 +14,24 @@ cloudflare.com
 amazonaws.com
 akamai.net
 
-# Developer Tooling & Package Registries
+# Developer Tooling, Documentation & Package Registries
 github.com
 githubassets.com
 githubusercontent.com
 gitlab.com
 stackoverflow.com
+stackexchange.com
 crates.io
 static.crates.io
+docs.rs
+rust-lang.org
 npmjs.com
 registry.npmjs.org
 pypi.org
 pythonhosted.org
+python.org
 pkg.go.dev
+go.dev
 docker.com
 docker.io
 quay.io
@@ -34,9 +39,35 @@ huggingface.co
 jetbrains.com
 visualstudio.com
 vscode-cdn.net
+developer.mozilla.org
+w3schools.com
+geeksforgeeks.org
+leetcode.com
+hackerrank.com
+codeforces.com
+
+# Education & Academic Research
+coursera.org
+udemy.com
+edx.org
+khanacademy.org
+mit.edu
+stanford.edu
+harvard.edu
+arxiv.org
+ncbi.nlm.nih.gov
+pubmed.ncbi.nlm.nih.gov
+nature.com
+sciencedirect.com
+springer.com
+researchgate.net
 
 # Enterprise Workplace & Communication
 microsoft.com
+microsoftonline.com
+msauth.net
+msftauth.net
+windows.net
 office.com
 office365.com
 azure.com
@@ -44,6 +75,9 @@ live.com
 teams.microsoft.com
 teams.com
 outlook.com
+outlook.office.com
+outlook.office365.com
+skype.com
 slack.com
 slack-edge.com
 slack-imgs.com
@@ -60,20 +94,40 @@ box.com
 linear.app
 linkedin.com
 whatsapp.com
+web.whatsapp.com
 
 # Banking, Tax & Government Portals
 chase.com
 bankofamerica.com
 wellsfargo.com
 citi.com
+capitalone.com
 fidelity.com
 vanguard.com
+schwab.com
 paypal.com
 stripe.com
+hdfcbank.com
+icicibank.com
+onlinesbi.sbi
+sbi.co.in
+axisbank.com
+kotak.com
+pnbindia.in
 irctc.co.in
 cris.org.in
+indianrail.gov.in
 incometax.gov.in
 uidai.gov.in
+digilocker.gov.in
+
+# OS System Updates & Telemetry
+windowsupdate.com
+update.microsoft.com
+msftncsi.com
+delivery.mp.microsoft.com
+swcdn.apple.com
+swdist.apple.com
 
 [processes]
 # Developer IDEs & Editors
@@ -95,6 +149,8 @@ nvim.exe
 nvim
 vim.exe
 vim
+notepad++.exe
+devenv.exe
 
 # Developer Toolchains & Terminals
 cargo.exe
@@ -125,6 +181,7 @@ alacritty
 wezterm-gui.exe
 wezterm
 WindowsTerminal.exe
+mintty.exe
 
 # Workplace Communication
 Teams.exe
@@ -135,3 +192,5 @@ Zoom.exe
 zoom
 OUTLOOK.EXE
 outlook
+webex.exe
+Lync.exe

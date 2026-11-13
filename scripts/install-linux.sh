@@ -63,3 +63,4 @@ systemctl restart supervision.service
 echo ""
 echo "✓ Supervision Service successfully installed and running!"
 echo "Check status with: supervision-cli status"
+

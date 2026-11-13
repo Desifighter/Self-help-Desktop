@@ -71,3 +71,4 @@ launchctl bootstrap system "$PLIST_PATH"
 echo ""
 echo "✓ Supervision LaunchDaemon successfully installed and running!"
 echo "Check status with: supervision-cli status"
+
